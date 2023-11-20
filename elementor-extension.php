@@ -35,6 +35,7 @@ class GooglePlacesDynamicTag extends Tag {
 					'url' => 'URL',
 					'weekday_text' => 'Weekday',
 					'business_status' => 'Business Status',
+					'formatted_address' => 'Formatted Address',
 					'place_id' => 'Place ID'
                 ],
                 'default' => 'name'
@@ -62,8 +63,8 @@ class GooglePlacesDynamicTag extends Tag {
 
         // If no transient exists, fetch the data
         if (false === $place_details) {
-            $url = "https://maps.googleapis.com/maps/api/place/details/json?place_id=$place_id&fields=name,place_id,rating,user_ratings_total,url,opening_hours,business_status&key=$api_key";
-            $response = wp_remote_get($url);
+            $url = "https://maps.googleapis.com/maps/api/place/details/json?place_id=$place_id&fields=name,place_id,rating,user_ratings_total,url,opening_hours,business_status,formatted_address&key=$api_key";
+			$response = wp_remote_get($url);
             $data = wp_remote_retrieve_body($response);
             $place_details = json_decode($data, true);
 
@@ -80,31 +81,31 @@ class GooglePlacesDynamicTag extends Tag {
         // Continue the rest of your rendering logic
         switch ($place_data_type) {
             case 'name':
-                echo (isset($place_details['result']['name']) ? $place_details['result']['name'] : 'N/A');
+                echo (isset($place_details['result']['name']) ? $place_details['result']['name'] : '');
                 break;
             case 'rating':
 				if ($isNumberCategory) {
 					echo isset($place_details['result']['rating']) ? $place_details['result']['rating'] : '0';
 				} else {
-					echo (isset($place_details['result']['rating']) ? $place_details['result']['rating'] : 'N/A');
+					echo (isset($place_details['result']['rating']) ? $place_details['result']['rating'] : '');
 				}
 				break;
             case 'user_ratings_total':
                 if(isset($place_details['result']) && array_key_exists('user_ratings_total', $place_details['result'])) {
                     echo $place_details['result']['user_ratings_total'];
                 } else {
-                    echo "Total User Ratings: N/A";
+                    echo "";
                 }
                 break;
 			case 'place_id':
                 if(isset($place_details['result']) && array_key_exists('place_id', $place_details['result'])) {
                     echo $place_details['result']['place_id'];
                 } else {
-                    echo "Place ID: N/A";
+                    echo "";
                 }
                 break;
 			case 'business_status':
-				$status = isset($place_details['result']['business_status']) ? $place_details['result']['business_status'] : 'N/A';
+				$status = isset($place_details['result']['business_status']) ? $place_details['result']['business_status'] : '';
 				switch ($status) {
 					case 'OPERATIONAL':
 						echo "Open time";
@@ -124,7 +125,7 @@ class GooglePlacesDynamicTag extends Tag {
 					if ($isURLCategory) {
 						echo isset($place_details['result']['url']) ? $place_details['result']['url'] : '';
 					} else {
-						echo "URL: " . (isset($place_details['result']['url']) ? $place_details['result']['url'] : 'N/A');
+						echo "URL: " . (isset($place_details['result']['url']) ? $place_details['result']['url'] : '');
 					}
 			break;
 			case 'weekday_text':
@@ -133,8 +134,11 @@ class GooglePlacesDynamicTag extends Tag {
 						echo $weekday . "<br>";
 					}
 				} else {
-					echo "Weekday Text: N/A";
+					echo "";
 				}
+				break;
+			case 'formatted_address':
+				echo (isset($place_details['result']['formatted_address']) ? $place_details['result']['formatted_address'] : '');
 				break;
             default:
                 echo "Error: Invalid data type selected.";

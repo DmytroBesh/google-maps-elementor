@@ -88,6 +88,7 @@ function get_google_places_transients() {
                 'user_ratings_total' => isset($result['user_ratings_total']) ? $result['user_ratings_total'] : 'N/A',
                 'url' => isset($result['url']) ? $result['url'] : 'N/A',
                 'business_status' => $business_status_text, // додано
+				'formatted_address' => isset($result['formatted_address']) ? $result['formatted_address'] : 'N/A',
                 'expiration_date' => isset($place_details['cached_timestamp']) ? date('Y-m-d H:i:s', $place_details['cached_timestamp'] + $saved_cache_duration) : 'N/A'
             ];
         }
@@ -155,7 +156,18 @@ function google_places_settings_page() {
             echo "<div class='updated'><p>Time cache saved!</p></div>";
         }
     }
-
+	
+	
+	    if (isset($_POST['delete_selected'])) {
+        // Тут має бути виклик функції, яка видаляє вибрані рядки з кешу
+        $selected_place_ids = $_POST['selected_place_ids'];
+        foreach ($selected_place_ids as $place_id) {
+            delete_transient('google_place_' . $place_id);
+        }
+        echo "<div class='updated'><p>Видалено вибрані рядки!</p></div>";
+    }
+	
+	
     $saved_cache_duration = get_option('google_places_cache_duration', 750); // 750 годин за замовчуванням
 
     ?>
@@ -190,14 +202,17 @@ function google_places_settings_page() {
 $places_data = get_google_places_transients();
 
 echo "<h3>Cached Google Places Data</h3>";
+echo "<form method='post'>";
 echo "<table class='widefat fixed' cellspacing='0'>";
 echo "<thead>
         <tr>
-            <th>Place Id</th>
+            <th width='20px'><input type='checkbox' id='select_all'></th>
+			<th>Place Id</th>
 			<th>Business Status</th>
             <th>Назва</th>
             <th>Рейтинг</th>
             <th>Кількість відгуків</th>
+			<th>formatted_address</th>
             <th>URL</th>
             <th>Дата до якої зберігається кеш</th>
         </tr>
@@ -206,17 +221,34 @@ echo "<thead>
 
 foreach ($places_data as $place) {
     echo "<tr>";
+    echo "<td><input type='checkbox' name='selected_place_ids[]' value='" . esc_attr($place['place_id']) . "'></td>";
     echo "<td>" . esc_html($place['place_id']) . "</td>";
     echo "<td>" . esc_html($place['business_status']) . "</td>";
     echo "<td>" . esc_html($place['name']) . "</td>";
     echo "<td>" . esc_html($place['rating']) . "</td>";
     echo "<td>" . esc_html($place['user_ratings_total']) . "</td>";
+	echo "<td>" . esc_html($place['formatted_address']) . "</td>";
     echo "<td><a href='" . esc_url($place['url']) . "' target='_blank'>Link</a></td>";
     echo "<td>" . esc_html($place['expiration_date']) . "</td>";
     echo "</tr>";
 }
 
 echo "</tbody></table>";
+echo "<p class='submit'>";
+echo "<input type='submit' name='delete_selected' class='button' value='Видалити вибране'>";
+echo "</p>";
+echo "</form>";
+
+    // Add JavaScript for handling select all checkboxes
+    echo "<script>
+        document.getElementById('select_all').addEventListener('click', function(e) {
+            var checkboxes = document.querySelectorAll('input[type=\"checkbox\"]');
+            for (var checkbox of checkboxes) {
+                checkbox.checked = e.target.checked;
+            }
+        });
+    </script>";
+
 ?>
     </div>
     <?php
